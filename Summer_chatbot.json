@@ -1,0 +1,309 @@
+{
+  "name": "Summer_chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line_webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        192
+      ],
+      "id": "7b2039bb-92b2-4409-8b5a-7158787f7619",
+      "name": "Webhook",
+      "webhookId": "29ad21e3-c5a6-4982-9796-5f1f49456f5f"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.events[0].message.text }}",
+        "options": {
+          "systemMessage": "=You are a Financial and Investment News Analyst Expert. \n\nYour task is to receive news, articles, stock price and other related information I give you 3 tools (3 mongodb database) to do the job\nThe first one is the news source. \nThe second has fundamental data of the stock.\nThe third has prices of the stock.\n\nyou can use multiple tools to construct a response), summarize them concisely, and interpret their impact. Provide your response in a clear, plain text format. and also use friendly casual language.\n\nWhen you're asked about the news, there're 3 cases that may happen. Decide which case it is and follow the instruction.\n\ncase 1: if there're multiple news related to the question you are asked, *important!* you only provide a list of the most important 10 related news' headline (use numbered list for each headline) then you can ask user which news they'd like to read. when user tell you which news they like to read you can construct a response as per instruction below\n\ncase2:if you were asked about news in particular sector you use the tool I gave you and then read all the news then decide which news is in the asked sector. and provide a number list of 10 most important related news headlines only do not include anything else.\n\ncase3: if there's only one news or user asked for a particular news, you can go ahead and construct a response as instruction below\n\ninstruction for constructing response:\n for each news article provide a four-part response, maintaining this exact structure without any additional preamble or conversational text:\n\nHeadline: this is important! do not include the word \"Headline:\" in the response\n\nwrite an impactful headline for that particular news\n\nNews Summary: (do not include the word \"News Summary:\" in the response)\n\nPresent the very core information of the news in a very short, concise, easy-to-understand paragraph. the length of the paragraph must be less than 1/3 of the original news\n\nAvoid financial jargon. The summary should be clear enough for anyone to grasp the main point without having read the full article.\n\nNews Impact Interpretation:\n\nUse bullet points to outline the key implications and potential effects of the news.\n\nFocus on how this news might influence financial markets, specific industries, or investment decisions.\n\nsource: \n\ninclude the source of the original news \n\nMaintain a clear and simple language, free of complex financial terms.\n\nImportant: Ensure all text within the summary and interpretation is standard plain text. Avoid using characters that require complex escaping in a text field (e.g., unescaped double quotes, backslashes not used for newlines).\n\nEvery response must adhere to this exact format. Do not repeat this prompt in your responses. Also make sure that your response must be very concise can be read within 3 min and make sure your response do not exceed 4800 characters.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        208,
+        192
+      ],
+      "id": "4d2c712c-56f2-4898-bbee-209be79264e4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        144,
+        432
+      ],
+      "id": "79c57852-4257-4501-841c-2fe81541aa70",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SeX11nv8TeTtKAiz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.events[0].source.userId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        432
+      ],
+      "id": "d19e9bcc-f269-4975-9379-230ba1d6ab07",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "collection": "Summer_news",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDbTool",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        416
+      ],
+      "id": "3a5338af-e912-4e53-8ef2-051887f965b5",
+      "name": "get news1",
+      "credentials": {
+        "mongoDb": {
+          "id": "jmR8261xMp4EM4QO",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "collection": "Summer_fundamental",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDbTool",
+      "typeVersion": 1.2,
+      "position": [
+        528,
+        416
+      ],
+      "id": "7b1c21c5-106d-4fb9-997f-34b5f2cc2e54",
+      "name": "get fundamental1",
+      "credentials": {
+        "mongoDb": {
+          "id": "jmR8261xMp4EM4QO",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "collection": "Summer_ticker",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDbTool",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        416
+      ],
+      "id": "fb7b4fd2-2e57-455a-b49f-3ff0b70a9dee",
+      "name": "get ticker",
+      "credentials": {
+        "mongoDb": {
+          "id": "jmR8261xMp4EM4QO",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "collection": "Summer_user",
+        "updateKey": "userId",
+        "fields": "=userId",
+        "upsert": true,
+        "options": {
+          "dateFields": "=userId: {{ $json.userId }}"
+        }
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        0
+      ],
+      "id": "b5bc0c0c-a682-4fca-9ed0-ee31b4ccf7dd",
+      "name": "userId",
+      "credentials": {
+        "mongoDb": {
+          "id": "jmR8261xMp4EM4QO",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst result = items.map((item) => {\n  return {\n    userId: item?.json?.body?.events[0]?.source?.userId,\n  };\n});\nreturn result;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8437c2db-bfe9-40dd-bdce-b6e65b1e9ef2",
+      "name": "extract user"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 9mAi2hpLY0wNFMBAQWTHq+I+wo1KoBWQKCnnzlJ7S054eSLMSCuhvMsoXoMYWzChFgMoRIDZgFvSLVdLFHy71I/+za9pSoKNrloX0gU3mvd6QSxorMqwwb+C33REYhWtpmpon60yHr5j3cRN6ejuUAdB04t89/1O/w1cDnyilFU="
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $('Webhook').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($json.output) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        592,
+        192
+      ],
+      "id": "39c3e8c6-4963-4ad2-b878-8375db0e71d0",
+      "name": "send message"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "extract user",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get news1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get fundamental1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get ticker": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "userId": {
+      "main": [
+        []
+      ]
+    },
+    "extract user": {
+      "main": [
+        [
+          {
+            "node": "userId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5c66b083-7a93-42fa-bee8-ca7a8d4b6d6e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04d5c1c623dbfda03434f052ce84e92a4a1e70ef4b09b680d8524ad2fb5d0aae"
+  },
+  "id": "DJiwUeDioEhwovGP",
+  "tags": []
+}
